@@ -1,39 +1,17 @@
-# Use PHP 8.1
-FROM php:8.1-apache
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    git \
-    curl \
-    libzip-dev \
-    libonig-dev
-
-# Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /var/www/html
 
-# Copy project files
+# Copy the existing project files to the container
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Give permissions to Laravel folders
+RUN chmod -R 775 bootstrap/cache storage
 
-# Enable apache rewrite module
-RUN a2enmod rewrite
+# Install Composer dependencies
+RUN composer install --no-dev --optimize-autoloader
 
 # Expose port 80
 EXPOSE 80
 
-# Start Apache
-CMD ["apache2-foreground"]
+# Set the command to run Laravel
+CMD ["php", "-S", "0.0.0.0:80", "-t", "public"]
