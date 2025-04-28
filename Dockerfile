@@ -1,32 +1,30 @@
-# Use the official PHP image from the Docker Hub
-FROM php:8.1-fpm
+FROM php:8.2-apache
 
-# Install system dependencies
+# Install system packages and PHP extensions required by Laravel
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    unzip \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libzip-dev \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libzip-dev libonig-dev zip unzip \
+ && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+ && docker-php-ext-install -j$(nproc) gd mbstring zip exif pcntl bcmath pdo_mysql \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Composer (PHP dependency manager)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Copy Composer (dependency manager) from the official Composer image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set the working directory inside the container
+# Set working directory inside the container
 WORKDIR /var/www/html
 
-# Copy the existing project files to the container
+# Copy application files to the container
 COPY . .
 
-# Install Composer dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Allow Composer to run as root without warnings
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Expose port 80 (standard HTTP port)
-EXPOSE 80
+# Install PHP dependencies (Laravel vendor directory)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Set the command to run Laravel
-CMD ["php", "-S", "0.0.0.0:80", "-t", "public"]
+# Set the application port (Laravel default is 8000)
+ENV PORT=8000
+EXPOSE 8000
+
+# Start the Laravel development server on the correct port
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
