@@ -1,30 +1,32 @@
-# Use the official PHP image from Docker Hub
+# Use the official PHP image from the Docker Hub
 FROM php:8.1-fpm
 
-# Install dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    unzip \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    zip \
-    git \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql
+    libzip-dev \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Set working directory
-WORKDIR /var/www
-
-# Copy the existing application directory contents
-COPY . .
-
-# Install Composer (PHP package manager)
+# Install Composer (PHP dependency manager)
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install PHP dependencies using Composer
-RUN composer install --no-dev
+# Set the working directory inside the container
+WORKDIR /var/www/html
 
-# Expose port 80
+# Copy the existing project files to the container
+COPY . .
+
+# Install Composer dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Expose port 80 (standard HTTP port)
 EXPOSE 80
 
-# Start PHP server
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+# Set the command to run Laravel
+CMD ["php", "-S", "0.0.0.0:80", "-t", "public"]
