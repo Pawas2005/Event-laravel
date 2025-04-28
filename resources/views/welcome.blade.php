@@ -176,8 +176,8 @@
                         <div>
                             <h3 class="text-xl font-bold mb-4">Contact Us</h3>
                             <ul class="space-y-2 text-gray-400">
-                                <li><i class="fas fa-envelope mr-2"></i> aamirhasan2929@gmail.com</li>
-                                <li><i class="fas fa-phone mr-2"></i> +91 9798527832</li>
+                                <li><i class="fas fa-envelope mr-2"></i> pawasranjan5@gmail.com</li>
+                                <li><i class="fas fa-phone mr-2"></i> +91 8318322276</li>
                                 <li><i class="fas fa-map-marker-alt mr-2"></i> Phagwara, Punjab</li>
                             </ul>
                         </div>
