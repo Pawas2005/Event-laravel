@@ -1,29 +1,31 @@
+# Use official PHP-Apache image
 FROM php:8.2-apache
 
-# Install system packages and PHP extensions required by Laravel
-RUN apt-get update && apt-get install -y \
-    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libzip-dev libonig-dev zip unzip \
- && docker-php-ext-install -j$(nproc) gd mbstring zip exif pcntl bcmath pdo_mysql \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Enable Apache Rewrite Module (very important for Laravel routes)
+RUN a2enmod rewrite
 
-# Copy Composer (dependency manager) from the official Composer image
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
+    libzip-dev unzip libpng-dev libonig-dev libjpeg-dev libfreetype6-dev \
+ && docker-php-ext-configure gd \
+ && docker-php-ext-install pdo pdo_mysql zip gd mbstring bcmath exif
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory inside the container
+# Set working directory
 WORKDIR /var/www/html
 
-# Copy application files to the container
+# Copy project files
 COPY . .
 
-# Allow Composer to run as root without warnings
-ENV COMPOSER_ALLOW_SUPERUSER=1
+# Set permissions (important for Laravel storage and bootstrap)
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Install PHP dependencies (Laravel vendor directory)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install Laravel dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Set the application port (Laravel default is 8000)
-ENV PORT=8000
-EXPOSE 8000
+# Expose port 80
+EXPOSE 80
 
-# Start the Laravel development server on the correct port
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# No CMD needed — Apache will start automatically
